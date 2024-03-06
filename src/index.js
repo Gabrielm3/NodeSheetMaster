@@ -1,92 +1,67 @@
 const express = require("express");
-const  { google } = require("googleapis");
-const PORT = 3001
 const app = express();
-app.use(express.json())
+const PORT = 3001;
 
-exports.getAuthSheets = async function() {
-    const auth = new google.auth.GoogleAuth({
-        keyFile: "credentials.json",
-        scopes: "https://www.googleapis.com/auth/spreadsheets",
-    });
+app.use(express.json());
 
-    const client = await auth.getClient();
+// Auth
+const authModule = require('./modules/auth');
+const sheetsModule = require('./modules/sheets');
 
-    const googleSheets = google.sheets({
-        version: "v4",
-        auth: client
-    })
-
-    const spreadsheetId = "1VAgBkSyGrbzzChustc_eXn-ZzSrzUjpvLKUHlSwR8Q8"
-
-    return {
-        auth,
-        client,
-        googleSheets,
-        spreadsheetId,
-    };
-}
-
-app.get("/metadata", async (req, res) => {
-    const { googleSheets, auth, spreadsheetId } = await getAuthSheets();
-
-    const metadata = await googleSheets.spreadsheets.get({
-        auth,
-        spreadsheetId,
-    })
-
-    res.send(metadata.data);
+// Middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(err.statusCode || 500).send(err.message)
 })
 
-app.get("/getRows", async (req, res) => {
-    const { googleSheets, auth, spreadsheetId } = await getAuthSheets();
+app.get("/metadata", async (req, res, next) => {
+    try {
+        const { googleSheets, auth, spreadsheetId } = await authModule.getAuthSheets();
 
-    const getRows = await googleSheets.spreadsheets.values.get({
-        auth,
-        spreadsheetId,
-        range: "Página1",
-        valueRenderOption: "UNFORMATTED_VALUE",
-        dateTimeRenderOption: "FORMATTED_STRING",
-    })
+        const metadata = await sheetsModule.getMetadata(googleSheets, auth, spreadsheetId);
+        console.log(metadata)
+        res.send(metadata.data)
+    } catch(error) {
+        next(error);
+    }
+});
 
-    res.send(getRows.data);
-})
+app.get("/getRows", async (req, res, next) => {
+    try {
+        const { googleSheets, auth, spreadsheetId } = await authModule.getAuthSheets();
+       
+        const getRows = await sheetsModule.getRows(googleSheets, auth, spreadsheetId, "Página1");
+        console.log(getRows)
+        res.send(getRows.data);
+    } catch(error) {
+        next(error);
+    }
+});
 
-app.post("/addRow", async (req, res) => {
-    const { googleSheets, auth, spreadsheetId } = await getAuthSheets();
+app.post("/addRow", async (req, res, next) => {
+    try {
+        const { googleSheets, auth, spreadsheetId } = await authModule.getAuthSheets();
 
-    const { values } = req.body;
+        const { values } = req.body;
 
-    const row = await googleSheets.spreadsheets.values.append({
-        auth,
-        spreadsheetId,
-        range: "Página1",
-        valueInputOption: "USER_ENTERED",
-        resource: {
-            values: values
-        }
-    })
-    
-    res.send(row.data);
-})
+        const addRow = await sheetsModule.AddRow(googleSheets, auth, spreadsheetId, "Página1", values);
+        res.send(addRow.data);
+    } catch(error) {
+        next(error);
+    }
+});
 
-app.post("/updatevalues", async(req, res) => {
-    const { googleSheets, auth, spreadsheetId } = await getAuthSheets();
+app.post("/updateValues", async(req, res, next) => {
+    try {
+        const { googleSheets, auth, spreadsheetId } = await authModule.getAuthSheets();
 
-    const { values } = req.body;
+        const { values } = req.body;
 
-    const updateValue = await googleSheets.spreadsheets.values.update({
-        auth,
-        spreadsheetId,
-        range: "Página1",
-        valueInputOption: "USER_ENTERED",
-        resource: {
-            values: values,
-        }
-    })
+        const updateValues = await sheetsModule.updateValues(googleSheets, auth, spreadsheetId, "Página1", values);
+        res.send(updateValues.data);
+    } catch(error) {
+        next(error);
+    }
+});
 
-    res.send(updateValue.data);
-})
-
-app.listen(PORT, () => console.log('Running ', PORT))
-
+app.listen(PORT, () => console.log('Running ', PORT));
