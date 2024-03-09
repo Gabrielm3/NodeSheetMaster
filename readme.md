@@ -1,4 +1,3 @@
-Explain
 # NodeSheetMaster
 
 NodeSheetMaster é uma aplicação Node.js escrita em TypeScript que facilita a interação com o Google Sheets API. Permitindo aos usuários realizar operações básicas de leitura e escrita em planilhas do Google, como obter metadados, ler e escrever valores de células, adicionar linhas e atualizar valores.
