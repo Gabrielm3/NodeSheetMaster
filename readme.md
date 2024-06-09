@@ -28,7 +28,7 @@ NodeSheetMaster é uma aplicação Node.js escrita em TypeScript que facilita a 
 
 1. Clone o repositório:
 ```
-git clone https://github.com/seu-usuario/NodeSheetMaster.git 
+git clone https://github.com/gabrielm3/NodeSheetMaster.git 
 cd NodeSheetMaster
 ```
 2. Instale as dependências:
